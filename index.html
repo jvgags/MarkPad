@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="slate">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarkPad</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ TOOLBAR ═══ -->
+  <div id="toolbar">
+    <div class="toolbar-brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="2" width="20" height="20" rx="4" fill="currentColor" opacity="0.15"/>
+        <path d="M6 7h12M6 12h8M6 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>MarkPad</span>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <div class="toolbar-group">
+      <button class="tb-btn" data-action="bold"          data-tip="Bold (Ctrl+B)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
+      </button>
+      <button class="tb-btn" data-action="italic"        data-tip="Italic (Ctrl+I)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+      </button>
+      <button class="tb-btn" data-action="strikethrough" data-tip="Strikethrough">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><path d="M16 6C16 6 14.5 4 12 4s-4 1-4 3 2 3 4 4"/><path d="M8 18c0 0 1.5 2 4 2s4-1 4-3-2-3-4-4"/></svg>
+      </button>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <div class="toolbar-group">
+      <button class="tb-btn" data-action="h1" data-tip="Heading 1" style="font-size:11px;font-weight:800;font-family:var(--font-ui)">H1</button>
+      <button class="tb-btn" data-action="h2" data-tip="Heading 2" style="font-size:11px;font-weight:800;font-family:var(--font-ui)">H2</button>
+      <button class="tb-btn" data-action="h3" data-tip="Heading 3" style="font-size:11px;font-weight:800;font-family:var(--font-ui)">H3</button>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <div class="toolbar-group">
+      <button class="tb-btn" data-action="ul"    data-tip="Bullet list">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <button class="tb-btn" data-action="ol"    data-tip="Numbered list">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4M4 10h2" stroke-linecap="round"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="tb-btn" data-action="quote" data-tip="Blockquote">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+      </button>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <div class="toolbar-group">
+      <button class="tb-btn" data-action="code"      data-tip="Inline code (Ctrl+`)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </button>
+      <button class="tb-btn" data-action="codeblock" data-tip="Code block">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </button>
+      <button class="tb-btn" data-action="link"      data-tip="Link (Ctrl+K)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </button>
+      <button class="tb-btn" data-action="image"     data-tip="Image">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </button>
+      <button class="tb-btn" data-action="table"     data-tip="Table">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/><line x1="15" y1="9" x2="15" y2="21"/></svg>
+      </button>
+      <button class="tb-btn" data-action="hr"        data-tip="Horizontal rule">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/></svg>
+      </button>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="toolbar-right">
+      <span id="word-count"></span>
+
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="split">Split</button>
+        <button class="view-btn"        data-view="editor">Edit</button>
+        <button class="view-btn"        data-view="preview">Preview</button>
+      </div>
+
+      <select id="theme-select" class="tb-select" title="Theme"></select>
+
+      <!-- Font picker — the Aa button -->
+      <button class="tb-btn" data-action="fonts" data-tip="Font settings" style="font-size:13px;font-weight:700;font-family:var(--font-ui);width:auto;padding:0 8px;letter-spacing:-.01em">Aa</button>
+
+      <!-- Backup & Restore -->
+      <button class="tb-btn" data-action="restore" data-tip="Backup &amp; Restore">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </button>
+
+      <button class="tb-btn" data-action="download-md"   data-tip="Download .md">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+      <button class="tb-btn" data-action="download-html" data-tip="Export HTML">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </button>
+      <button class="tb-btn" data-action="shortcuts"     data-tip="Shortcuts (Ctrl+/)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </button>
+      <button class="tb-btn" data-action="toggle-sidebar" data-tip="Toggle sidebar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ MAIN ═══ -->
+  <div id="main">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Files
+        <div class="sidebar-header-actions">
+          <button class="sb-btn" data-action="new-file" title="New file">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            File
+          </button>
+          <button class="sb-btn" data-action="new-folder" title="New folder">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            Folder
+          </button>
+        </div>
+      </div>
+      <div id="file-tree"></div>
+    </div>
+
+    <!-- EDITOR / PREVIEW PANES -->
+    <div id="panes">
+      <div id="editor-pane">
+        <div class="pane-label">Markdown</div>
+        <textarea id="editor" spellcheck="true" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Start writing…"></textarea>
+      </div>
+      <div id="splitter"></div>
+      <div id="preview-pane">
+        <div class="pane-label">Preview</div>
+        <div id="preview-content"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ STATUS BAR ═══ -->
+  <div id="statusbar">
+    <span class="status-item">MarkPad</span>
+    <span class="status-item"><span id="status-col">Ln 1, Col 1</span></span>
+    <span class="status-item"><span id="status-words"></span></span>
+    <span class="status-item"><span id="status-lines"></span></span>
+    <span class="status-item" style="margin-left:auto">
+      Theme: <span id="status-theme" class="status-accent">Slate</span>
+    </span>
+    <span class="status-item">Auto-save ✓</span>
+  </div>
+
+</div><!-- #app -->
+
+<!-- ═══ CONTEXT MENU ═══ -->
+<div id="ctx-menu"></div>
+
+<!-- ═══ MODAL: Shortcuts ═══ -->
+<div id="shortcuts-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title">
+      Keyboard Shortcuts
+      <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="shortcut-group">
+      <div class="shortcut-group-title">Formatting</div>
+      <div class="shortcut-row"><span>Bold</span><span class="kbd"><kbd>Ctrl</kbd><kbd>B</kbd></span></div>
+      <div class="shortcut-row"><span>Italic</span><span class="kbd"><kbd>Ctrl</kbd><kbd>I</kbd></span></div>
+      <div class="shortcut-row"><span>Inline Code</span><span class="kbd"><kbd>Ctrl</kbd><kbd>`</kbd></span></div>
+      <div class="shortcut-row"><span>Link</span><span class="kbd"><kbd>Ctrl</kbd><kbd>K</kbd></span></div>
+      <div class="shortcut-row"><span>Code Block</span><span class="kbd"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>K</kbd></span></div>
+    </div>
+    <div class="shortcut-group">
+      <div class="shortcut-group-title">File</div>
+      <div class="shortcut-row"><span>Save now</span><span class="kbd"><kbd>Ctrl</kbd><kbd>S</kbd></span></div>
+      <div class="shortcut-row"><span>Export Markdown</span><span class="kbd"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>E</kbd></span></div>
+    </div>
+    <div class="shortcut-group">
+      <div class="shortcut-group-title">Editor</div>
+      <div class="shortcut-row"><span>Indent</span><span class="kbd"><kbd>Tab</kbd></span></div>
+      <div class="shortcut-row"><span>Continue list</span><span class="kbd"><kbd>Enter</kbd></span></div>
+      <div class="shortcut-row"><span>Shortcuts panel</span><span class="kbd"><kbd>Ctrl</kbd><kbd>/</kbd></span></div>
+    </div>
+    <div class="shortcut-group">
+      <div class="shortcut-group-title">Sidebar</div>
+      <div class="shortcut-row"><span>Rename file/folder</span><span>Double-click name</span></div>
+      <div class="shortcut-row"><span>Context menu</span><span>Right-click</span></div>
+      <div class="shortcut-row"><span>Reorder / move to folder</span><span>Drag &amp; drop</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Font Picker ═══ -->
+<div id="font-modal" class="modal-overlay">
+  <div class="modal-box font-modal-box">
+    <!-- populated dynamically by app.js openFontModal() -->
+  </div>
+</div>
+
+<!-- ═══ MODAL: Backup & Restore ═══ -->
+<div id="backup-modal" class="modal-overlay">
+  <div class="modal-box bk-modal-box">
+    <!-- populated dynamically by openBackupModal() -->
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
