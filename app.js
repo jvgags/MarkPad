@@ -70,6 +70,7 @@ const hello = name => \`Hello, \${name}!\`;
     activeId:        'welcome',
     theme:           'slate',
     view:            'split',
+    tocOpen:         false,
     editorFontId:    'jetbrains',
     previewFontId:   'lora',
     editorFontSize:  14,
@@ -218,7 +219,9 @@ const hello = name => \`Hello, \${name}!\`;
   const splitterEl   = $('#splitter');
   const editorPane   = $('#editor-pane');
   const previewPane  = $('#preview-pane');
-  const ctxMenu      = $('#ctx-menu');
+  const tocSidebar  = $('#toc-sidebar');
+  const tocList     = $('#toc-list');
+  const tocEmpty    = $('#toc-empty');
   const shortcutsMdl = $('#shortcuts-modal');
   const fontMdl      = $('#font-modal');
   const backupMdl    = $('#backup-modal');
@@ -320,6 +323,7 @@ const hello = name => \`Hello, \${name}!\`;
     renderPreview(f.content);
     updateStats(f.content);
     renderTree();
+    buildToc();
     queueSave();
   }
 
@@ -696,6 +700,7 @@ const hello = name => \`Hello, \${name}!\`;
     f.content=editorEl.value;
     renderPreview(f.content);
     updateStats(f.content);
+    debouncedBuildToc();
     queueSave();
   }
 
@@ -1079,6 +1084,7 @@ const hello = name => \`Hello, \${name}!\`;
       case 'restore':       openBackupModal(); break;
       case 'shortcuts':     shortcutsMdl.classList.toggle('open'); break;
       case 'toggle-sidebar':sidebarEl.classList.toggle('collapsed'); break;
+      case 'toggle-toc':    toggleToc(); break;
     }
   });
 
@@ -1103,6 +1109,134 @@ const hello = name => \`Hello, \${name}!\`;
     if(e.key==='Escape'){ closeCtx(); shortcutsMdl.classList.remove('open'); fontMdl.classList.remove('open'); backupMdl.classList.remove('open'); }
   });
   [shortcutsMdl,fontMdl,backupMdl].forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); }));
+
+  // ── Table of Contents ──────────────────────────────────────
+
+  function toggleToc() {
+    const collapsed = tocSidebar.classList.toggle('collapsed');
+    state.tocOpen = !collapsed;
+    queueSave();
+    if (!collapsed) buildToc();
+  }
+
+  // Parse headings from raw markdown source (much faster than DOM scanning)
+  function parseHeadings(src) {
+    const headings = [];
+    const lines = src.split('\n');
+    let inFence = false;
+    for (const line of lines) {
+      // Skip fenced code blocks
+      if (/^```/.test(line)) { inFence = !inFence; continue; }
+      if (inFence) continue;
+      const m = line.match(/^(#{1,6})\s+(.+)/);
+      if (m) {
+        headings.push({
+          level: m[1].length,
+          text:  m[2].replace(/[*_`~\[\]]/g, '').trim(),  // strip inline MD
+        });
+      }
+    }
+    return headings;
+  }
+
+  function buildToc() {
+    if (tocSidebar.classList.contains('collapsed')) return;
+
+    const src = editorEl.value;
+    const headings = parseHeadings(src);
+
+    tocList.innerHTML = '';
+
+    if (!headings.length) {
+      tocEmpty.classList.add('visible');
+      return;
+    }
+    tocEmpty.classList.remove('visible');
+
+    headings.forEach((h, i) => {
+      const a = document.createElement('a');
+      a.className   = 'toc-item';
+      a.dataset.level = h.level;
+      a.dataset.index = i;
+      a.textContent = h.text;
+      a.href        = '#';
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        jumpToHeading(h.text, h.level);
+        setActiveTocItem(a);
+      });
+      tocList.appendChild(a);
+    });
+
+    // Highlight the active heading based on scroll position in preview
+    syncActiveTocFromScroll();
+  }
+
+  // Jump in PREVIEW pane: find the heading element by text match and scroll to it
+  // Also jump in EDITOR: find the line and set cursor there
+  function jumpToHeading(text, level) {
+    // Jump in preview pane
+    const previewPane = $('#preview-pane');
+    const headingEls  = previewEl.querySelectorAll('h1,h2,h3,h4,h5,h6');
+    for (const el of headingEls) {
+      if (el.tagName.toLowerCase() === `h${level}` &&
+          el.textContent.trim() === text) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Flash the heading briefly
+        el.classList.add('toc-flash');
+        setTimeout(() => el.classList.remove('toc-flash'), 900);
+        break;
+      }
+    }
+
+    // Also move editor cursor to that heading line
+    const lines = editorEl.value.split('\n');
+    const hashes = '#'.repeat(level);
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].match(new RegExp(`^${hashes}\\s+`)) &&
+          lines[i].replace(/^#+\s+/, '').replace(/[*_`~\[\]]/g, '').trim() === text) {
+        // Calculate char offset
+        const charPos = lines.slice(0, i).join('\n').length + (i > 0 ? 1 : 0);
+        editorEl.focus();
+        editorEl.setSelectionRange(charPos, charPos + lines[i].length);
+        editorEl.scrollTop = editorEl.scrollHeight * (i / lines.length);
+        break;
+      }
+    }
+  }
+
+  function setActiveTocItem(el) {
+    $$('.toc-item.active', tocList).forEach(x => x.classList.remove('active'));
+    if (el) el.classList.add('active');
+  }
+
+  // Sync active TOC item based on which heading is near the top of preview scroll
+  function syncActiveTocFromScroll() {
+    if (tocSidebar.classList.contains('collapsed')) return;
+    const previewPaneEl = $('#preview-pane');
+    const scrollTop = previewPaneEl.scrollTop + 60; // offset for label bar
+    const headingEls = [...previewEl.querySelectorAll('h1,h2,h3,h4,h5,h6')];
+    if (!headingEls.length) return;
+
+    let activeIdx = 0;
+    for (let i = 0; i < headingEls.length; i++) {
+      if (headingEls[i].offsetTop <= scrollTop) activeIdx = i;
+      else break;
+    }
+
+    const items = [...tocList.querySelectorAll('.toc-item')];
+    if (items[activeIdx]) setActiveTocItem(items[activeIdx]);
+  }
+
+  // Rebuild TOC on editor input (debounced)
+  let _tocTimer;
+  function debouncedBuildToc() {
+    clearTimeout(_tocTimer);
+    _tocTimer = setTimeout(buildToc, 300);
+  }
+
+  // Sync scroll position to active item
+  $('#preview-pane').addEventListener('scroll', syncActiveTocFromScroll);
 
   // ── Global Tooltip Engine ──────────────────────────────────
   (function () {
@@ -1190,6 +1324,7 @@ const hello = name => \`Hello, \${name}!\`;
     applyFontVars();
     applyTheme(state.theme);
     applyView(state.view);
+    if (state.tocOpen) tocSidebar.classList.remove('collapsed');
     renderTree();
     const start=findNode(state.activeId)||flatFiles(state.tree)[0];
     if(start) loadFile(start.id);
