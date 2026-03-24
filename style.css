@@ -7,7 +7,7 @@
   --font-editor:  'JetBrains Mono', monospace;
   --font-preview: 'Lora', serif;
   --radius:       6px;
-  --toolbar-h:    48px;
+  --toolbar-h:    40px;
   --sidebar-w:    240px;
   --tr:           0.18s ease;
   --editor-font-size:  14px;
@@ -74,22 +74,22 @@ html,body{height:100%;overflow:hidden;font-family:var(--font-ui);background:var(
    =========================== */
 #app{display:flex;flex-direction:column;height:100vh}
 
-/* ── TOOLBAR ── */
+/* ── TOOLBAR (app-level) ── */
 #toolbar{
   display:flex;align-items:center;height:var(--toolbar-h);
   background:var(--bg-toolbar);border-bottom:1px solid var(--border);
-  padding:0 12px;gap:4px;flex-shrink:0;z-index:10;box-shadow:var(--shadow);
+  padding:0 10px;gap:4px;flex-shrink:0;z-index:10;box-shadow:var(--shadow);
   overflow-x:auto;
 }
 #toolbar::-webkit-scrollbar{height:0}
 
-.toolbar-brand{display:flex;align-items:center;gap:8px;margin-right:8px;font-weight:700;font-size:15px;color:var(--accent);letter-spacing:-.02em;white-space:nowrap}
-.toolbar-sep{width:1px;height:20px;background:var(--border);margin:0 5px;flex-shrink:0}
+.toolbar-brand{display:flex;align-items:center;gap:7px;margin-right:4px;font-weight:700;font-size:14px;color:var(--accent);letter-spacing:-.02em;white-space:nowrap}
+.toolbar-sep{width:1px;height:18px;background:var(--border);margin:0 4px;flex-shrink:0}
 .toolbar-group{display:flex;align-items:center;gap:2px}
 
 .tb-btn{
   display:flex;align-items:center;justify-content:center;
-  min-width:32px;height:32px;padding:0 4px;
+  min-width:28px;height:28px;padding:0 3px;
   border:none;background:transparent;color:var(--text-sec);
   border-radius:var(--radius);cursor:pointer;
   font-size:12px;font-family:var(--font-mono);font-weight:600;
@@ -97,23 +97,16 @@ html,body{height:100%;overflow:hidden;font-family:var(--font-ui);background:var(
 }
 .tb-btn:hover{background:var(--bg-hover);color:var(--text-pri)}
 .tb-btn.active{background:var(--accent-soft);color:var(--accent)}
-.tb-btn::after{
-  content:attr(data-tip);position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);
-  background:var(--bg-active);color:var(--text-pri);font-size:10px;font-family:var(--font-ui);
-  padding:2px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;
-  opacity:0;transition:opacity .15s;z-index:200;box-shadow:var(--shadow);
-}
-.tb-btn:hover::after{opacity:1}
 
-.toolbar-right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.toolbar-right{margin-left:auto;display:flex;align-items:center;gap:5px;flex-shrink:0}
 
 .tb-select{
   appearance:none;background:var(--bg-hover);border:1px solid var(--border);
   color:var(--text-pri);font-family:var(--font-ui);font-size:12px;
-  padding:4px 26px 4px 9px;border-radius:var(--radius);cursor:pointer;
+  padding:3px 24px 3px 8px;border-radius:var(--radius);cursor:pointer;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 7px center;
-  transition:border-color var(--tr);max-width:130px;
+  background-repeat:no-repeat;background-position:right 6px center;
+  transition:border-color var(--tr);max-width:120px;
 }
 .tb-select:hover{border-color:var(--accent)}
 .tb-select:focus{outline:none;border-color:var(--accent)}
@@ -121,8 +114,25 @@ html,body{height:100%;overflow:hidden;font-family:var(--font-ui);background:var(
 #word-count{font-size:11px;color:var(--text-mut);white-space:nowrap}
 
 .view-toggle{display:flex;background:var(--bg-hover);border-radius:var(--radius);padding:2px;gap:2px}
-.view-btn{padding:3px 9px;font-size:11px;font-weight:600;font-family:var(--font-ui);border:none;background:transparent;color:var(--text-mut);border-radius:4px;cursor:pointer;transition:background var(--tr),color var(--tr);letter-spacing:.02em}
+.view-btn{padding:2px 8px;font-size:11px;font-weight:600;font-family:var(--font-ui);border:none;background:transparent;color:var(--text-mut);border-radius:4px;cursor:pointer;transition:background var(--tr),color var(--tr);letter-spacing:.02em}
 .view-btn.active{background:var(--accent);color:#fff}
+
+/* ── EDITOR TOOLBAR (lives inside editor-pane) ── */
+#editor-toolbar{
+  display:flex;align-items:center;gap:2px;
+  padding:4px 8px;
+  background:var(--bg-toolbar);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  overflow-x:auto;
+}
+#editor-toolbar::-webkit-scrollbar{height:0}
+
+/* hide editor toolbar when preview-only view */
+#panes.view-preview #editor-toolbar{display:none}
+
+.et-group{display:flex;align-items:center;gap:1px}
+.et-sep{width:1px;height:18px;background:var(--border);margin:0 4px;flex-shrink:0}
 
 /* ── MAIN ── */
 #main{display:flex;flex:1;overflow:hidden}
@@ -133,6 +143,11 @@ html,body{height:100%;overflow:hidden;font-family:var(--font-ui);background:var(
   display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .25s ease;
 }
 #sidebar.collapsed{width:0}
+#sidebar.import-drop-active{
+  outline: 2px dashed var(--accent);
+  outline-offset: -3px;
+  background: var(--drop-hi);
+}
 
 .sidebar-header{
   padding:10px 10px 6px;flex-shrink:0;
@@ -227,6 +242,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font-ui);background:var(
 #panes.view-editor #preview-pane{display:none}
 #panes.view-preview #editor-pane{display:none}
 
+/* Preview pane label */
 .pane-label{padding:5px 16px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mut);border-bottom:1px solid var(--border);background:var(--bg-toolbar);flex-shrink:0}
 
 #splitter{width:5px;background:var(--div);cursor:col-resize;flex-shrink:0;transition:background var(--tr);z-index:5}
@@ -276,8 +292,33 @@ html,body{height:100%;overflow:hidden;font-family:var(--font-ui);background:var(
 #preview-content input[type="checkbox"]{margin-right:6px;accent-color:var(--accent)}
 
 /* ===========================
-   SCROLLBARS
+   GLOBAL TOOLTIP
    =========================== */
+#mp-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  display: block;
+  visibility: hidden;
+  opacity: 0;
+  background: var(--bg-active);
+  color: var(--text-pri);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 4px 10px;
+  border-radius: 5px;
+  box-shadow: 0 3px 14px rgba(0,0,0,.3);
+  white-space: nowrap;
+  max-width: 280px;
+  transition: opacity .15s ease;
+}
+#mp-tooltip.visible {
+  visibility: visible;
+  opacity: 1;
+}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:3px}

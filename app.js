@@ -283,13 +283,13 @@ const hello = name => \`Hello, \${name}!\`;
     <svg class="folder-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="${iconPath}"/></svg>
     <span class="folder-name" data-id="${f.id}">${escH(f.name)}</span>
     <div class="folder-actions">
-      <button class="tree-btn" data-action="new-subfolder-in" data-id="${f.id}" title="New subfolder">
+      <button class="tree-btn" data-action="new-subfolder-in" data-id="${f.id}" data-tip="New subfolder inside ${escH(f.name)}">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
       </button>
-      <button class="tree-btn" data-action="new-file-in" data-id="${f.id}" title="New file in folder">
+      <button class="tree-btn" data-action="new-file-in" data-id="${f.id}" data-tip="New file inside ${escH(f.name)}">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
       </button>
-      <button class="tree-btn danger" data-action="delete-folder" data-id="${f.id}" title="Delete folder">
+      <button class="tree-btn danger" data-action="delete-folder" data-id="${f.id}" data-tip="Delete folder ${escH(f.name)}">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
       </button>
     </div>
@@ -304,7 +304,7 @@ const hello = name => \`Hello, \${name}!\`;
   <svg class="file-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
   <span class="file-name">${escH(f.name)}</span>
   <div class="file-actions">
-    <button class="tree-btn danger" data-action="delete-file" data-id="${f.id}" title="Delete">
+    <button class="tree-btn danger" data-action="delete-file" data-id="${f.id}" data-tip="Delete ${escH(f.name)}">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     </button>
   </div>
@@ -890,6 +890,111 @@ const hello = name => \`Hello, \${name}!\`;
     _toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
   }
 
+  // ── Import .md files ──────────────────────────────────────
+
+  const importInput = $('#md-import-input');
+
+  function triggerImport() {
+    importInput.value = '';   // reset so same file can be re-imported
+    importInput.click();
+  }
+
+  importInput.addEventListener('change', e => {
+    const files = [...e.target.files];
+    if (!files.length) return;
+    importFiles(files);
+  });
+
+  // Also allow drag-and-drop of .md files onto the sidebar
+  sidebarEl.addEventListener('dragover', e => {
+    const hasMd = [...(e.dataTransfer.items||[])].some(i => i.kind==='file');
+    if (!hasMd) return;
+    // Only handle external files (not sidebar tree drags)
+    if (_dragId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    sidebarEl.classList.add('import-drop-active');
+  });
+  sidebarEl.addEventListener('dragleave', e => {
+    if (!sidebarEl.contains(e.relatedTarget)) sidebarEl.classList.remove('import-drop-active');
+  });
+  sidebarEl.addEventListener('drop', e => {
+    sidebarEl.classList.remove('import-drop-active');
+    if (_dragId) return;   // internal tree drag — ignore
+    const files = [...e.dataTransfer.files].filter(f => /\.(md|markdown|txt)$/i.test(f.name));
+    if (!files.length) return;
+    e.preventDefault();
+    importFiles(files);
+  });
+
+  function importFiles(files) {
+    // Deduplicate by name against existing files in the workspace
+    const existingNames = new Set(flatFiles(state.tree).map(f => f.name));
+
+    // Ask where to place them if there are folders
+    const allFolders = flatFolders();
+    let destFolderId = null;
+
+    if (allFolders.length) {
+      const lines = ['0: Root (no folder)', ...allFolders.map((f, i) => `${i+1}: ${f.label}`)].join('\n');
+      const raw = prompt(`Import ${files.length} file${files.length!==1?'s':''} — choose destination:\n\n${lines}\n\nEnter number (or press Cancel to abort):`);
+      if (raw === null) return;
+      const idx = parseInt(raw);
+      if (isNaN(idx) || idx < 0 || idx > allFolders.length) return;
+      if (idx > 0) destFolderId = allFolders[idx - 1].id;
+    }
+
+    let readCount  = 0;
+    let imported   = 0;
+    let firstId    = null;
+    const total    = files.length;
+
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        readCount++;
+        let name = file.name;
+        // Ensure .md extension
+        if (!/\.(md|markdown)$/i.test(name)) name = name.replace(/\.[^.]+$/, '') + '.md';
+
+        // Deduplicate: append (2), (3)… if name already exists
+        if (existingNames.has(name)) {
+          const base = name.replace(/\.md$/i, '');
+          let n = 2;
+          while (existingNames.has(`${base} (${n}).md`)) n++;
+          name = `${base} (${n}).md`;
+        }
+        existingNames.add(name);
+
+        const node = { type:'file', id:uid(), name, content: ev.target.result };
+        imported++;
+
+        if (destFolderId) {
+          const folder = findNode(destFolderId);
+          if (folder) { folder.children = folder.children||[]; folder.children.push(node); folder.open = true; }
+        } else {
+          state.tree.push(node);
+        }
+
+        if (!firstId) firstId = node.id;
+
+        // When all files are read, update UI
+        if (readCount === total) {
+          renderTree();
+          queueSave();
+          if (firstId) loadFile(firstId);
+          const dest = destFolderId ? `"${findNode(destFolderId)?.name}"` : 'root';
+          showToast(`Imported ${imported} file${imported!==1?'s':''} → ${dest}`);
+        }
+      };
+      reader.onerror = () => {
+        readCount++;
+        if (readCount === total && firstId) { renderTree(); queueSave(); loadFile(firstId); }
+      };
+      reader.readAsText(file);
+    });
+  }
+
   // ── Downloads ──────────────────────────────────────────────
   function dlMD(){
     const f=activeFile();if(!f)return;
@@ -966,6 +1071,7 @@ const hello = name => \`Hello, \${name}!\`;
       case 'new-subfolder-in': newFolder(id); break;
       case 'delete-file':   deleteFile(id); break;
       case 'delete-folder': deleteFolder(id); break;
+      case 'import-md':     triggerImport(); break;
       case 'download-md':   dlMD(); break;
       case 'download-html': dlHTML(); break;
       case 'fonts':         openFontModal(); break;
@@ -997,6 +1103,83 @@ const hello = name => \`Hello, \${name}!\`;
     if(e.key==='Escape'){ closeCtx(); shortcutsMdl.classList.remove('open'); fontMdl.classList.remove('open'); backupMdl.classList.remove('open'); }
   });
   [shortcutsMdl,fontMdl,backupMdl].forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); }));
+
+  // ── Global Tooltip Engine ──────────────────────────────────
+  (function () {
+    const tip = document.createElement('div');
+    tip.id = 'mp-tooltip';
+    document.body.appendChild(tip);
+
+    let showTimer = null;
+    let activeEl  = null;
+
+    // Find the closest ancestor (or self) that has data-tip
+    function tipTarget(el) {
+      let node = el;
+      while (node && node !== document.body) {
+        if (node.dataset && node.dataset.tip) return node;
+        node = node.parentElement;
+      }
+      return null;
+    }
+
+    function place(el) {
+      const rect = el.getBoundingClientRect();
+      const GAP  = 7;
+      const vw   = window.innerWidth;
+      const vh   = window.innerHeight;
+      // tip is always display:block but visibility:hidden when not .visible
+      // so offsetWidth/Height are always measurable
+      const tw = tip.offsetWidth;
+      const th = tip.offsetHeight;
+
+      let left = rect.left + rect.width  / 2 - tw / 2;
+      let top  = rect.bottom + GAP;
+
+      if (top + th > vh - 8) top = rect.top - th - GAP;
+      left = Math.max(8, Math.min(left, vw - tw - 8));
+
+      tip.style.left = left + 'px';
+      tip.style.top  = top  + 'px';
+    }
+
+    function show(el) {
+      activeEl = el;
+      tip.textContent = el.dataset.tip;
+      place(el);
+      tip.classList.add('visible');
+    }
+
+    function hide() {
+      clearTimeout(showTimer);
+      showTimer = null;
+      activeEl  = null;
+      tip.classList.remove('visible');
+    }
+
+    // Use mouseover/mouseout on document but test the *closest* data-tip ancestor.
+    // This avoids the SVG-child-element false-negative problem.
+    document.addEventListener('mouseover', e => {
+      const el = tipTarget(e.target);
+      if (!el) { clearTimeout(showTimer); return; }
+      if (el === activeEl) return;            // already showing for this target
+      clearTimeout(showTimer);
+      showTimer = setTimeout(() => show(el), 480);
+    });
+
+    document.addEventListener('mouseout', e => {
+      // Only hide if we're leaving the active element (not just moving to a child)
+      if (!activeEl) { clearTimeout(showTimer); return; }
+      const related = tipTarget(e.relatedTarget);
+      if (related === activeEl) return;       // still inside same tipped element
+      clearTimeout(showTimer);
+      hide();
+    });
+
+    document.addEventListener('mousedown',  hide);
+    document.addEventListener('scroll',     hide, true);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
+  })();
 
   // ── Init ───────────────────────────────────────────────────
   function init(){
