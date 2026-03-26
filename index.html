@@ -64,6 +64,9 @@
       <button class="tb-btn" data-action="shortcuts"     data-tip="Keyboard shortcuts (Ctrl+/)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </button>
+      <button class="tb-btn" data-action="open-search"   data-tip="Search (Ctrl+F)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
       <button class="tb-btn" data-action="toggle-sidebar" data-tip="Toggle file sidebar">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
       </button>
@@ -152,6 +155,44 @@
           </div>
         </div>
         <textarea id="editor" spellcheck="true" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Start writing…"></textarea>
+
+        <!-- Search / Replace bar -->
+        <div id="search-bar" class="search-bar hidden">
+          <div class="search-row">
+            <div class="search-input-wrap">
+              <input id="search-input" class="search-input" type="text" placeholder="Find…" autocomplete="off" spellcheck="false">
+              <span id="search-count" class="search-count"></span>
+            </div>
+            <div class="search-actions">
+              <button class="srch-btn" id="search-match-case" data-tip="Match case" title="Aa">Aa</button>
+              <button class="srch-btn" id="search-whole-word" data-tip="Whole word" title="\b">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 7v10M20 7v10M4 12h16"/></svg>
+              </button>
+              <button class="srch-btn" id="search-regex"      data-tip="Use regex">.*</button>
+            </div>
+            <div class="search-nav">
+              <button class="srch-btn" id="search-prev" data-tip="Previous match (Shift+Enter)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+              </button>
+              <button class="srch-btn" id="search-next" data-tip="Next match (Enter)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <button class="srch-btn" id="search-toggle-replace" data-tip="Toggle replace">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              </button>
+              <button class="srch-btn" id="search-close"  data-tip="Close (Escape)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="replace-row" id="replace-row">
+            <input id="replace-input" class="search-input" type="text" placeholder="Replace…" autocomplete="off" spellcheck="false">
+            <div class="search-nav">
+              <button class="srch-btn" id="replace-one"  data-tip="Replace this match">Replace</button>
+              <button class="srch-btn" id="replace-all"  data-tip="Replace all matches">All</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div id="splitter" data-tip="Drag to resize panes"></div>
       <div id="preview-pane">
@@ -211,6 +252,8 @@
       <div class="shortcut-group-title">File</div>
       <div class="shortcut-row"><span>Save now</span><span class="kbd"><kbd>Ctrl</kbd><kbd>S</kbd></span></div>
       <div class="shortcut-row"><span>Export Markdown</span><span class="kbd"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>E</kbd></span></div>
+      <div class="shortcut-row"><span>Search</span><span class="kbd"><kbd>Ctrl</kbd><kbd>F</kbd></span></div>
+      <div class="shortcut-row"><span>Search &amp; Replace</span><span class="kbd"><kbd>Ctrl</kbd><kbd>H</kbd></span></div>
     </div>
     <div class="shortcut-group">
       <div class="shortcut-group-title">Editor</div>

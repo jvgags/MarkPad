@@ -396,6 +396,96 @@ html,body{height:100%;overflow:hidden;font-family:var(--font-ui);background:var(
 }
 
 /* ===========================
+   SEARCH / REPLACE BAR
+   =========================== */
+.search-bar {
+  flex-shrink: 0;
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border);
+  padding: 5px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.search-bar.hidden { display: none; }
+
+.search-row, .replace-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.search-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-input {
+  width: 100%;
+  background: var(--bg-editor);
+  border: 1px solid var(--border);
+  color: var(--text-pri);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 4px 52px 4px 8px;
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color var(--tr);
+}
+.search-input:focus { border-color: var(--accent); }
+.search-input.no-match { border-color: #e05555; background: rgba(224,85,85,.08); }
+
+.search-count {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10.5px;
+  color: var(--text-mut);
+  font-family: var(--font-ui);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.search-actions, .search-nav {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.srch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-sec);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  transition: background var(--tr), color var(--tr), border-color var(--tr);
+  white-space: nowrap;
+}
+.srch-btn:hover { background: var(--bg-hover); color: var(--text-pri); }
+.srch-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.srch-btn:disabled { opacity: .35; cursor: default; pointer-events: none; }
+
+.replace-row { display: none; }
+.replace-row.visible { display: flex; }
+.replace-row .search-input { padding: 4px 8px; }
+
+/* ===========================
    GLOBAL TOOLTIP
    =========================== */
 #mp-tooltip {

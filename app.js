@@ -219,9 +219,10 @@ const hello = name => \`Hello, \${name}!\`;
   const splitterEl   = $('#splitter');
   const editorPane   = $('#editor-pane');
   const previewPane  = $('#preview-pane');
-  const tocSidebar  = $('#toc-sidebar');
-  const tocList     = $('#toc-list');
-  const tocEmpty    = $('#toc-empty');
+  const tocSidebar   = $('#toc-sidebar');
+  const tocList      = $('#toc-list');
+  const tocEmpty     = $('#toc-empty');
+  const ctxMenu      = $('#ctx-menu');
   const shortcutsMdl = $('#shortcuts-modal');
   const fontMdl      = $('#font-modal');
   const backupMdl    = $('#backup-modal');
@@ -714,6 +715,8 @@ const hello = name => \`Hello, \${name}!\`;
     if(ctrl&&e.key==='`'){e.preventDefault();wrap('`');return;}
     if(ctrl&&e.shiftKey&&e.key==='K'){e.preventDefault();block('\n```\n\n```',5);return;}
     if(ctrl&&e.key==='s'){e.preventDefault();saveState();return;}
+    if(ctrl&&e.key==='f'){e.preventDefault();openSearch(false);return;}
+    if(ctrl&&e.key==='h'){e.preventDefault();openSearch(true);return;}
     if(ctrl&&e.shiftKey&&e.key==='E'){e.preventDefault();dlMD();return;}
     if(e.key==='Tab'){e.preventDefault();const s=editorEl.selectionStart;editorEl.setRangeText('  ',s,editorEl.selectionEnd,'end');onInput();return;}
     if(e.key==='Enter'){
@@ -1082,6 +1085,7 @@ const hello = name => \`Hello, \${name}!\`;
       case 'fonts':         openFontModal(); break;
       case 'backup':        doBackup(); break;
       case 'restore':       openBackupModal(); break;
+      case 'open-search':   openSearch(false); break;
       case 'shortcuts':     shortcutsMdl.classList.toggle('open'); break;
       case 'toggle-sidebar':sidebarEl.classList.toggle('collapsed'); break;
       case 'toggle-toc':    toggleToc(); break;
@@ -1109,6 +1113,241 @@ const hello = name => \`Hello, \${name}!\`;
     if(e.key==='Escape'){ closeCtx(); shortcutsMdl.classList.remove('open'); fontMdl.classList.remove('open'); backupMdl.classList.remove('open'); }
   });
   [shortcutsMdl,fontMdl,backupMdl].forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); }));
+
+  // ── Search & Replace ──────────────────────────────────────
+
+  const searchBar       = $('#search-bar');
+  const searchInput     = $('#search-input');
+  const replaceInput    = $('#replace-input');
+  const searchCount     = $('#search-count');
+  const replaceRow      = $('#replace-row');
+  const btnMatchCase    = $('#search-match-case');
+  const btnWholeWord    = $('#search-whole-word');
+  const btnRegex        = $('#search-regex');
+  const btnPrev         = $('#search-prev');
+  const btnNext         = $('#search-next');
+  const btnToggleReplace= $('#search-toggle-replace');
+  const btnClose        = $('#search-close');
+  const btnReplaceOne   = $('#replace-one');
+  const btnReplaceAll   = $('#replace-all');
+
+  // State
+  const srch = {
+    matches:    [],   // array of {start, end} in editor value
+    current:    -1,   // index into matches
+    matchCase:  false,
+    wholeWord:  false,
+    useRegex:   false,
+  };
+
+  function openSearch(withReplace = false) {
+    searchBar.classList.remove('hidden');
+    if (withReplace) replaceRow.classList.add('visible');
+    // Pre-fill with selected text if any
+    const sel = editorEl.value.substring(editorEl.selectionStart, editorEl.selectionEnd);
+    if (sel && !sel.includes('\n')) {
+      searchInput.value = sel;
+    }
+    searchInput.focus();
+    searchInput.select();
+    runSearch();
+  }
+
+  function closeSearch() {
+    searchBar.classList.add('hidden');
+    replaceRow.classList.remove('visible');
+    srch.matches = [];
+    srch.current = -1;
+    searchInput.value   = '';
+    replaceInput.value  = '';
+    searchCount.textContent = '';
+    searchInput.classList.remove('no-match');
+    editorEl.focus();
+  }
+
+  function buildRegex(pattern) {
+    if (!pattern) return null;
+    try {
+      let src = srch.useRegex ? pattern : pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (srch.wholeWord) src = `\\b${src}\\b`;
+      const flags = srch.matchCase ? 'g' : 'gi';
+      return new RegExp(src, flags);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function runSearch() {
+    const pattern = searchInput.value;
+    const text    = editorEl.value;
+    srch.matches  = [];
+    srch.current  = -1;
+
+    if (!pattern) {
+      searchCount.textContent = '';
+      searchInput.classList.remove('no-match');
+      updateSearchNav();
+      return;
+    }
+
+    const rx = buildRegex(pattern);
+    if (!rx) {
+      searchCount.textContent = 'bad regex';
+      searchInput.classList.add('no-match');
+      updateSearchNav();
+      return;
+    }
+
+    let m;
+    while ((m = rx.exec(text)) !== null) {
+      srch.matches.push({ start: m.index, end: m.index + m[0].length });
+      if (rx.lastIndex === m.index) rx.lastIndex++; // prevent infinite loop on zero-length match
+    }
+
+    if (srch.matches.length === 0) {
+      searchCount.textContent = 'No results';
+      searchInput.classList.add('no-match');
+      updateSearchNav();
+      return;
+    }
+
+    searchInput.classList.remove('no-match');
+
+    // Find closest match to current cursor
+    const cursor = editorEl.selectionStart;
+    let best = 0;
+    for (let i = 0; i < srch.matches.length; i++) {
+      if (srch.matches[i].start >= cursor) { best = i; break; }
+      best = i;
+    }
+    srch.current = best;
+    selectMatch(srch.current);
+    updateSearchNav();
+  }
+
+  function selectMatch(idx, focusEditor = false) {
+    if (idx < 0 || idx >= srch.matches.length) return;
+    const { start, end } = srch.matches[idx];
+    // Only steal focus when user explicitly navigates, not on every keystroke
+    if (focusEditor) {
+      editorEl.focus();
+      editorEl.setSelectionRange(start, end);
+    } else {
+      // Update selection without stealing focus from search input
+      editorEl.setSelectionRange(start, end);
+    }
+    scrollEditorToMatch(start);
+    updateSearchNav();
+  }
+
+  function scrollEditorToMatch(charPos) {
+    // Estimate line number and scroll
+    const before = editorEl.value.substring(0, charPos);
+    const lineNum = before.split('\n').length - 1;
+    const lineH   = parseFloat(getComputedStyle(editorEl).lineHeight) || 21;
+    const target  = lineNum * lineH - editorEl.clientHeight / 2;
+    editorEl.scrollTop = Math.max(0, target);
+  }
+
+  function updateSearchNav() {
+    const total = srch.matches.length;
+    const cur   = total ? srch.current + 1 : 0;
+    searchCount.textContent = total ? `${cur} / ${total}` : (searchInput.value ? 'No results' : '');
+    btnPrev.disabled     = total < 2;
+    btnNext.disabled     = total < 2;
+    btnReplaceOne.disabled = total === 0;
+    btnReplaceAll.disabled = total === 0;
+  }
+
+  function stepMatch(dir) {
+    if (!srch.matches.length) return;
+    srch.current = (srch.current + dir + srch.matches.length) % srch.matches.length;
+    selectMatch(srch.current, true);
+  }
+
+  function doReplaceOne() {
+    if (!srch.matches.length || srch.current < 0) return;
+    const { start, end } = srch.matches[srch.current];
+    const replacement = replaceInput.value;
+    const text = editorEl.value;
+
+    // For regex mode with capture groups, build replacement properly
+    const rx = buildRegex(searchInput.value);
+    let finalReplacement = replacement;
+    if (srch.useRegex && rx) {
+      const matchText = text.substring(start, end);
+      finalReplacement = matchText.replace(new RegExp(rx.source, rx.flags.replace('g','')), replacement);
+    }
+
+    editorEl.setRangeText(finalReplacement, start, end, 'end');
+    onInput();
+    runSearch();
+  }
+
+  function doReplaceAll() {
+    if (!srch.matches.length) return;
+    const replacement = replaceInput.value;
+    const rx = buildRegex(searchInput.value);
+    if (!rx) return;
+
+    // Do replacement directly on value — much simpler than iterating matches
+    const newText = srch.useRegex
+      ? editorEl.value.replace(rx, replacement)
+      : editorEl.value.replace(rx, () => replacement);
+
+    const count = srch.matches.length;
+    editorEl.value = newText;
+    onInput();
+    srch.matches = [];
+    srch.current = -1;
+    searchCount.textContent = `Replaced ${count}`;
+    searchInput.classList.remove('no-match');
+    updateSearchNav();
+    showToast(`Replaced ${count} occurrence${count !== 1 ? 's' : ''}`);
+  }
+
+  // Toggle option buttons
+  function toggleSearchOpt(btn, key) {
+    srch[key] = !srch[key];
+    btn.classList.toggle('active', srch[key]);
+    runSearch();
+  }
+
+  // Wire up search bar events
+  searchInput.addEventListener('input', runSearch);
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter')       { e.preventDefault(); stepMatch(e.shiftKey ? -1 : 1); }
+    if (e.key === 'Escape')      { closeSearch(); }
+    if (e.key === 'Tab' && replaceRow.classList.contains('visible')) {
+      e.preventDefault(); replaceInput.focus();
+    }
+  });
+  replaceInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  { e.preventDefault(); doReplaceOne(); }
+    if (e.key === 'Escape') { closeSearch(); }
+    if (e.key === 'Tab')    { e.preventDefault(); searchInput.focus(); }
+  });
+
+  btnMatchCase.addEventListener('click',     () => toggleSearchOpt(btnMatchCase, 'matchCase'));
+  btnWholeWord.addEventListener('click',     () => toggleSearchOpt(btnWholeWord, 'wholeWord'));
+  btnRegex.addEventListener('click',         () => toggleSearchOpt(btnRegex,     'useRegex'));
+  btnPrev.addEventListener('click',          () => stepMatch(-1));
+  btnNext.addEventListener('click',          () => stepMatch(1));
+  btnToggleReplace.addEventListener('click', () => {
+    replaceRow.classList.toggle('visible');
+    if (replaceRow.classList.contains('visible')) replaceInput.focus();
+    else searchInput.focus();
+  });
+  btnClose.addEventListener('click',    closeSearch);
+  btnReplaceOne.addEventListener('click', doReplaceOne);
+  btnReplaceAll.addEventListener('click', doReplaceAll);
+
+  // Also close on Escape globally if search is open
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !searchBar.classList.contains('hidden')) {
+      closeSearch();
+    }
+  }, true);  // capture phase so it fires before other handlers
 
   // ── Table of Contents ──────────────────────────────────────
 
