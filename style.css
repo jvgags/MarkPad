@@ -236,6 +236,50 @@ html,body{height:100%;overflow:hidden;font-family:var(--font-ui);background:var(
 .file-item:hover .file-actions{opacity:1}
 
 /* ── PANES ── */
+#panes-wrap{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+#doc-title-bar{
+  display:flex;align-items:baseline;gap:10px;
+  padding:0 20px;
+  height:38px;min-height:38px;
+  background:var(--bg-toolbar);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  overflow:hidden;
+}
+#doc-title-text{
+  font-size:15px;font-weight:700;
+  color:var(--text-main);
+  letter-spacing:-.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  cursor:text;
+  padding:2px 4px;
+  border-radius:4px;
+  outline:none;
+  min-width:40px;
+  max-width:100%;
+  flex-shrink:1;
+  line-height:38px;
+  transition:background .12s;
+}
+#doc-title-text:hover{background:var(--bg-hover)}
+#doc-title-text[contenteditable="true"]{
+  background:var(--bg-active);
+  color:var(--text-main);
+  white-space:nowrap;
+  overflow:visible;
+  text-overflow:clip;
+  outline:2px solid var(--accent);
+  outline-offset:-1px;
+  cursor:text;
+}
+#doc-title-hint{
+  font-size:11px;color:var(--text-mut);
+  opacity:0;transition:opacity .15s;
+  white-space:nowrap;flex-shrink:0;
+  pointer-events:none;
+}
+#doc-title-bar:hover #doc-title-hint{opacity:1}
+#doc-title-text[contenteditable="true"] ~ #doc-title-hint{opacity:0!important}
 #panes{flex:1;display:flex;overflow:hidden;position:relative}
 #editor-pane{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg-editor)}
 #preview-pane{flex:1;background:var(--bg-preview);border-left:1px solid var(--border);overflow-y:auto;min-width:0}

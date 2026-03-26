@@ -99,6 +99,12 @@
     </div>
 
     <!-- EDITOR / PREVIEW PANES -->
+    <div id="panes-wrap">
+    <!-- Document title bar — spans full editor+preview width -->
+    <div id="doc-title-bar">
+      <span id="doc-title-text"></span>
+      <span id="doc-title-hint">click to rename</span>
+    </div>
     <div id="panes">
       <div id="editor-pane">
         <!-- Formatting toolbar sits directly above the textarea -->
@@ -154,8 +160,6 @@
             </button>
           </div>
         </div>
-        <textarea id="editor" spellcheck="true" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Start writing…"></textarea>
-
         <!-- Search / Replace bar -->
         <div id="search-bar" class="search-bar hidden">
           <div class="search-row">
@@ -164,11 +168,11 @@
               <span id="search-count" class="search-count"></span>
             </div>
             <div class="search-actions">
-              <button class="srch-btn" id="search-match-case" data-tip="Match case" title="Aa">Aa</button>
-              <button class="srch-btn" id="search-whole-word" data-tip="Whole word" title="\b">
+              <button class="srch-btn" id="search-match-case" data-tip="Match case">Aa</button>
+              <button class="srch-btn" id="search-whole-word" data-tip="Whole word">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 7v10M20 7v10M4 12h16"/></svg>
               </button>
-              <button class="srch-btn" id="search-regex"      data-tip="Use regex">.*</button>
+              <button class="srch-btn" id="search-regex" data-tip="Use regex">.*</button>
             </div>
             <div class="search-nav">
               <button class="srch-btn" id="search-prev" data-tip="Previous match (Shift+Enter)">
@@ -180,7 +184,7 @@
               <button class="srch-btn" id="search-toggle-replace" data-tip="Toggle replace">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
               </button>
-              <button class="srch-btn" id="search-close"  data-tip="Close (Escape)">
+              <button class="srch-btn" id="search-close" data-tip="Close (Escape)">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -188,11 +192,13 @@
           <div class="replace-row" id="replace-row">
             <input id="replace-input" class="search-input" type="text" placeholder="Replace…" autocomplete="off" spellcheck="false">
             <div class="search-nav">
-              <button class="srch-btn" id="replace-one"  data-tip="Replace this match">Replace</button>
-              <button class="srch-btn" id="replace-all"  data-tip="Replace all matches">All</button>
+              <button class="srch-btn" id="replace-one" data-tip="Replace this match">Replace</button>
+              <button class="srch-btn" id="replace-all" data-tip="Replace all matches">All</button>
             </div>
           </div>
         </div>
+
+        <textarea id="editor" spellcheck="true" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Start writing…"></textarea>
       </div>
       <div id="splitter" data-tip="Drag to resize panes"></div>
       <div id="preview-pane">
@@ -200,6 +206,7 @@
         <div id="preview-content"></div>
       </div>
     </div><!-- #panes -->
+    </div><!-- #panes-wrap -->
 
     <!-- TOC RIGHT SIDEBAR (collapsed by default) -->
     <div id="toc-sidebar" class="collapsed">

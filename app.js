@@ -223,12 +223,60 @@ const hello = name => \`Hello, \${name}!\`;
   const tocList      = $('#toc-list');
   const tocEmpty     = $('#toc-empty');
   const ctxMenu      = $('#ctx-menu');
+  const docTitleText = $('#doc-title-text');
   const shortcutsMdl = $('#shortcuts-modal');
   const fontMdl      = $('#font-modal');
   const backupMdl    = $('#backup-modal');
 
   // ── Render helpers ─────────────────────────────────────────
   function renderPreview(txt) { previewEl.innerHTML = MD.parse(txt || ''); }
+
+  function updateDocTitle() {
+    const f = activeFile();
+    const displayName = f ? f.name.replace(/\.md$/i, '') : '';
+    if (docTitleText.contentEditable !== 'true') {
+      docTitleText.textContent = displayName;
+    }
+  }
+
+  function beginTitleRename() {
+    const f = activeFile(); if (!f) return;
+    const original = f.name;
+    const displayName = original.replace(/\.md$/i, '');
+
+    docTitleText.contentEditable = 'true';
+    docTitleText.textContent = displayName;
+    docTitleText.focus();
+
+    // Select all text
+    const range = document.createRange();
+    range.selectNodeContents(docTitleText);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+
+    const finish = (save) => {
+      docTitleText.contentEditable = 'false';
+      if (save) {
+        const raw = docTitleText.textContent.trim();
+        const newName = (raw || displayName) + (original.match(/\.[^.]+$/) ? original.match(/\.[^.]+$/)[0] : '.md');
+        f.name = newName;
+        docTitleText.textContent = newName.replace(/\.md$/i, '');
+        renderTree();
+        queueSave();
+      } else {
+        docTitleText.textContent = displayName;
+      }
+    };
+
+    const onKey = (e) => {
+      if (e.key === 'Enter')  { e.preventDefault(); docTitleText.removeEventListener('keydown', onKey); docTitleText.removeEventListener('blur', onBlur); finish(true); }
+      if (e.key === 'Escape') { docTitleText.removeEventListener('keydown', onKey); docTitleText.removeEventListener('blur', onBlur); finish(false); }
+    };
+    const onBlur = () => { docTitleText.removeEventListener('keydown', onKey); finish(true); };
+    docTitleText.addEventListener('keydown', onKey);
+    docTitleText.addEventListener('blur', onBlur, { once: true });
+  }
+
+  docTitleText.addEventListener('click', beginTitleRename);
 
   function updateStats(txt) {
     const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
@@ -308,6 +356,9 @@ const hello = name => \`Hello, \${name}!\`;
   <svg class="file-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
   <span class="file-name">${escH(f.name)}</span>
   <div class="file-actions">
+    <button class="tree-btn" data-action="duplicate-file" data-id="${f.id}" data-tip="Duplicate ${escH(f.name)}">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
     <button class="tree-btn danger" data-action="delete-file" data-id="${f.id}" data-tip="Delete ${escH(f.name)}">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     </button>
@@ -323,6 +374,7 @@ const hello = name => \`Hello, \${name}!\`;
     editorEl.value = f.content;
     renderPreview(f.content);
     updateStats(f.content);
+    updateDocTitle();
     renderTree();
     buildToc();
     queueSave();
@@ -367,6 +419,29 @@ const hello = name => \`Hello, \${name}!\`;
     queueSave();
   }
 
+  function duplicateFile(id) {
+    const src = findNode(id);
+    if (!src || src.type !== 'file') return;
+
+    // Generate a unique "Copy of …" name
+    const base = src.name.replace(/\.md$/i, '');
+    const newName = `${base} Copy.md`;
+
+    const copy = { type: 'file', id: uid(), name: newName, content: src.content };
+
+    // Insert the copy right after the original in whichever list contains it
+    function insertAfter(nodes) {
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i].id === id) { nodes.splice(i + 1, 0, copy); return true; }
+        if (nodes[i].children && insertAfter(nodes[i].children)) return true;
+      }
+      return false;
+    }
+    if (!insertAfter(state.tree)) state.tree.push(copy);
+
+    loadFile(copy.id);   // switches active file, renders tree, queues save
+  }
+
   function deleteFolder(id) {
     const folder = findNode(id); if (!folder) return;
     const kids = flatFiles([folder]);
@@ -407,6 +482,7 @@ const hello = name => \`Hello, \${name}!\`;
         node.name = el.textContent.trim() || original;
         el.textContent = node.name;
         queueSave();
+        if (node.id === state.activeId) updateDocTitle();
       } else if (node) {
         el.textContent = original;
       }
@@ -562,6 +638,7 @@ const hello = name => \`Hello, \${name}!\`;
 
     if (type==='file') {
       add('✏️  Rename',        ()=>beginRename(id,'file'));
+      add('📋  Duplicate',     ()=>duplicateFile(id));
       add('📁  Move to…',     ()=>moveDialog(id,'file'));
       sep();
       add('🗑  Delete',        ()=>deleteFile(id), true);
@@ -1078,6 +1155,7 @@ const hello = name => \`Hello, \${name}!\`;
       case 'new-file-in':   newFile(id); break;
       case 'new-subfolder-in': newFolder(id); break;
       case 'delete-file':   deleteFile(id); break;
+      case 'duplicate-file': duplicateFile(id); break;
       case 'delete-folder': deleteFolder(id); break;
       case 'import-md':     triggerImport(); break;
       case 'download-md':   dlMD(); break;
@@ -1143,11 +1221,15 @@ const hello = name => \`Hello, \${name}!\`;
   function openSearch(withReplace = false) {
     searchBar.classList.remove('hidden');
     if (withReplace) replaceRow.classList.add('visible');
-    // Pre-fill with selected text if any
+    // Clear first, then pre-fill only if text is selected in editor
+    searchInput.value  = '';
+    replaceInput.value = '';
     const sel = editorEl.value.substring(editorEl.selectionStart, editorEl.selectionEnd);
     if (sel && !sel.includes('\n')) {
       searchInput.value = sel;
     }
+    searchCount.textContent = '';
+    searchInput.classList.remove('no-match');
     searchInput.focus();
     searchInput.select();
     runSearch();
@@ -1158,9 +1240,12 @@ const hello = name => \`Hello, \${name}!\`;
     replaceRow.classList.remove('visible');
     srch.matches = [];
     srch.current = -1;
-    searchInput.value   = '';
-    replaceInput.value  = '';
-    searchCount.textContent = '';
+    // Clear inputs — use direct property assignment AND setAttribute for robustness
+    searchInput.value        = '';
+    replaceInput.value       = '';
+    searchInput.defaultValue = '';
+    replaceInput.defaultValue= '';
+    searchCount.textContent  = '';
     searchInput.classList.remove('no-match');
     editorEl.focus();
   }
